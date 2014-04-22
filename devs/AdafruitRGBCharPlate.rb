@@ -131,6 +131,10 @@ class AdafruitRGBCharPlate
     clear
   end
 
+  # Puts the MCP23017 back in Bank 0 + sequential write mode so
+  # that other code using the 'classic' library can still work.
+  # Any code using this newer version of the library should
+  # consider adding an atexit() handler that calls this.
   def stop
     @porta = 0b11000000 # Turn off LEDs on the way out
     @portb = 0b00000001
@@ -298,6 +302,11 @@ class AdafruitRGBCharPlate
   end
 
 private
+
+  # The LCD data pins (D4-D7) connect to MCP pins 12-9 (PORTB4-1), in
+  # that order. Because this sequence is 'reversed,' a direct shift
+  # won't work. This table remaps 4-bit data values to MCP PORTB
+  # outputs, incorporating both the reverse and shift.
   def flip
     [ 0b00000000, 0b00010000, 0b00001000, 0b00011000,
       0b00000100, 0b00010100, 0b00001100, 0b00011100,
@@ -305,6 +314,17 @@ private
       0b00000110, 0b00010110, 0b00001110, 0b00011110 ]
   end
 
+  # The speed of LCD accesses is inherently limited by I2C through the
+  # port expander. A 'well behaved program' is expected to poll the
+  # LCD to know that a prior instruction completed. But the timing of
+  # most instructions is a known uniform 37 mS. The enable strobe
+  # can't even be twiddled that fast through I2C, so it's a safe bet
+  # with these instructions to not waste time polling (which requires
+  # several I2C transfers for reconfiguring the port direction).
+  # The D7 pin is set as input when a potentially time-consuming
+  # instruction has been issued (e.g. screen clear), as well as on
+  # startup, and polling will then occur before more commands or data
+  # are issued.
   def pollables
     [ LCD_CLEARDISPLAY, LCD_RETURNHOME ]
   end
@@ -313,12 +333,17 @@ private
     [ 0x00, 0x40, 0x14, 0x54 ]
   end
 
+  # Low-level 4-bit interface for LCD output. This doesn't actually
+  # write data, just returns a byte array of the PORTB state over time.
+  # Can concatenate the output of multiple calls (up to 8) for more
+  # efficient batch write.
   def out4(bitmask, value)
     hi = bitmask | flip[value >> 4]
     lo = bitmask | flip[value & 0x0F]
     return [hi | 0b00100000, hi, lo | 0b00100000, lo]
   end
 
+  # Send command/data to LCD
   def write(value, char_mode = false)
     # If pin D7 is in input state, poll LCD busy flag until clear.
     if (@ddrb & 0b00010000) > 0 
@@ -345,14 +370,23 @@ private
     bitmask |= 0b10000000 if char_mode              # Set data bit if not a command
 
     if value.is_a?(String)
-    elsif value.is_a?(Array)
-      last = value.count - 1
-      data = []
-      value.each_with_index do |v, i|
+      value = value.unpack("C*")
+    end
+
+    if value.is_a?(Array)
+      last = value.count - 1                        # Last byte
+      data = []                                     
+      value.each_with_index do |v, i|               
+        data += out4(bitmask, v)
+        if (data.count >= 32) or (i == last)
+          @i2c.write(@addr, MCP23017_GPIOB, *data)
+          @portb = data[-1]                         # Save state of last byte out
+          data = []                                 # Clear list for next iteration
+        end
       end
     else
       data = out4(bitmask, value)
-      @i2c.write(@addr, MCP23017_GPIOB, data)
+      @i2c.write(@addr, MCP23017_GPIOB, *data)
       @portb = data[-1]
     end
 

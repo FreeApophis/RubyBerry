@@ -293,15 +293,17 @@ class AdafruitRGBCharPlate
     @i2c.write(@addr, MCP23017_GPIOB, @portb)
   end
 
-  def buttonPressed
-    #TODO
+  def buttonPressed(button)
+    bits = @i2c.read(@addr, 1, MCP23017_GPIOA).unpack("C").first
+    ((bits >> button) & 1) > 0  
   end
 
   def buttons
-    #TODO
+    bits = @i2c.read(@addr, 1, MCP23017_GPIOA).unpack("C").first
+    bits & 0b11111
   end
 
-private
+#private
 
   # The LCD data pins (D4-D7) connect to MCP pins 12-9 (PORTB4-1), in
   # that order. Because this sequence is 'reversed,' a direct shift

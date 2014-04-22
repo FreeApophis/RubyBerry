@@ -11,21 +11,16 @@ class Game
     @width, @height = width, height
     @cells = Array.new(height) { Array.new(width) { Cell.new(seed_probability) } }
     @display = MatrixDisplay.new
-
-    #@button1_pin  = 4
-    #@button2_pin  = 5
-
-    @io = WiringPi::GPIO.new
-    #@io.mode(@button1_pin, INPUT)
-    #@io.mode(@button2_pin, INPUT)
   end
   
-  def play!
-    #while true
-    1.upto(10000).each do
-      #break if @io.read(@button1_pin) == 0
-      #exit if @io.read(@button2_pin) == 0
+  def play!(display)
+    display.clear
+    num = 0
+    while( display.buttons != 16 )
       next!
+      num += 1
+      display.home
+      display.message("  Game of Life\nIterations: #{num}")
       matrix_plot
       matrix_plot
       matrix_plot

@@ -8,27 +8,27 @@ class AdafruitRGBCharPlate
   MCP23017_IOCON_BANK1 = 0x15 # IOCON when Bank 1 active
 
   # These are register addresses when in Bank 1 only:
-  MCP23017_GPIOA = 0x09
-  MCP23017_IODIRB = 0x10
-  MCP23017_GPIOB = 0x19
+  MCP23017_GPIOA       = 0x09
+  MCP23017_IODIRB      = 0x10
+  MCP23017_GPIOB       = 0x19
 
   # Port expander input pin definitions
-  SELECT = 0
-  RIGHT = 1
-  DOWN = 2
-  UP = 3
-  LEFT = 4
+  Select               = 0
+  Right                = 1
+  Down                 = 2
+  Up                   = 3
+  Left                 = 4
 
   # LED colors
-  OFF = 0x00
-  RED = 0x01
-  GREEN = 0x02
-  BLUE = 0x04
-  YELLOW = RED + GREEN
-  TEAL = GREEN + BLUE
-  VIOLET = RED + BLUE
-  WHITE = RED + GREEN + BLUE
-  ON = RED + GREEN + BLUE
+  Off                  = 0x00
+  Red                  = 0x01
+  Green                = 0x02
+  Blue                 = 0x04
+  Yellow               = Red + Green
+  Teal                 = Green + Blue
+  Violet               = Red + Blue
+  White                = Red + Green + Blue
+  ON                   = Red + Green + Blue
 
   # LCD Commands
   LCD_CLEARDISPLAY = 0x01
@@ -71,7 +71,7 @@ class AdafruitRGBCharPlate
     # Set MCP23017 IOCON register to Bank 0 with sequential operation.
     # If chip is already set for Bank 0, this will just write to OLATB,
     # which won't seriously bother anything on the plate right now
-    # (blue backlight LED will come on, but that's done in the next
+    # (Blue backlight LED will come on, but that's done in the next
     # step anyway).
     @i2c.write(@addr, MCP23017_IOCON_BANK1, 0)
 
@@ -303,7 +303,7 @@ class AdafruitRGBCharPlate
     bits & 0b11111
   end
 
-#private
+private
 
   # The LCD data pins (D4-D7) connect to MCP pins 12-9 (PORTB4-1), in
   # that order. Because this sequence is 'reversed,' a direct shift
@@ -357,7 +357,7 @@ class AdafruitRGBCharPlate
         @i2c.write(@addr, hi)
         # First nybble contains busy state
         bits = @i2c.read(@addr, 1).unpack("C").first
-        # Strobe low, high, low. Second nybble (A3) is ignored.
+        # Strobe low, high, low. Second nybble (A3) is ignoRed.
         @i2c.write(@addr, MCP23017_GPIOB, lo, hi, lo)
         break if (bits & 0b00000010) # D7=0, not busy
       end

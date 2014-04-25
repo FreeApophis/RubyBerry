@@ -1,0 +1,7 @@
+stations:
+  - { name: Radio Swiss Pop, url: http://stream.srg-ssr.ch/m/rsp/aacp_96, genre: pop }
+  - { name: Radio Swiss Classic, url: http://stream.srg-ssr.ch/m/rsc_de/aacp_96, genre: classic }
+  - { name: Radio Swiss Jazz, url: http://stream.srg-ssr.ch/m/rsj/aacp_96, genre: jazz }
+search-dir:
+  - usb-mountpoint
+
